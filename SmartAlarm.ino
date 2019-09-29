@@ -5,6 +5,12 @@
 MCUFRIEND_kbv tft;       // hard-wired for UNO shields anyway.
 #include <TouchScreen.h>
 
+
+#include <DS3231.h>
+
+//DS3231  rtc(SDA, SCL);
+DS3231  rtc(12, 13);
+
 #if defined(__SAM3X8E__)
 #undef __FlashStringHelper::F(string_literal)
 #define F(string_literal) string_literal
@@ -23,11 +29,6 @@ uint16_t TS_TOP = 900;
 uint16_t TS_BOT = 340;
 char *name = "Unknown controller";
 
-// For better pressure precision, we need to know the resistance
-// between X+ and X- Use any multimeter to read it
-// For the one we're using, its 300 ohms across the X plate
-//TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
-//TSPoint tp;
 
 #define MINPRESSURE 20
 #define MAXPRESSURE 850
@@ -50,17 +51,19 @@ uint8_t Orientation = 0;    //PORTRAIT
 #define WHITE   0xFFFF
 
 
+String inString = "";    // string to hold input
+
 void setup(void)
 {
-    uint16_t tmp;
-    tft.begin(9600);
-
-    tft.reset();
-    identifier = tft.readID(); // No.
+//    uint16_t tmp;
+//    tft.begin(9600);
+//
+//    tft.reset();
+//    identifier = tft.readID(); // No.
     
     identifier = 0;
     
-    name = "ILI9341 DealExtreme";
+//    name = "ILI9341 DealExtreme";
 //    SwapXY = 1;
 //    switch (Orientation) {      // adjust for different aspects
 //        case 0:   break;        //no change,  calibrated for PORTRAIT
@@ -69,17 +72,85 @@ void setup(void)
 //        case 3:   tmp = TS_LEFT, TS_LEFT = TS_TOP, TS_TOP = TS_RT, TS_RT = TS_BOT, TS_BOT = tmp;  break;
 //    }
 //
-//    Serial.begin(9600);
+    Serial.begin(9600);
 //    ts = TouchScreen(XP, YP, XM, YM, 300);     //call the constructor AGAIN with new values.
+
+
+    rtc.begin(); // Initialize the rtc object
+    // The following lines can be uncommented to set the date and time
+    rtc.setDOW(WEDNESDAY);     // Set Day-of-Week to SUNDAY
+    rtc.setTime(12, 0, 0);     // Set the time to 12:00:00 (24hr format)
+    rtc.setDate(1, 10, 2019);   // Set the date
+    
     tft.begin(identifier);
     tft.setRotation(Orientation);
     tft.fillScreen(BLACK);
-    tft.println(" COLOR GRADES");
+//    tft.setCursor(50,100);
+//    tft.setRotation(3);
+//    tft.setTextSize(5);
+//    Serial.println(rtc.getTimeStr()); 
+//    tft.println(rtc.getTimeStr());
 }
 
 void loop()
 {
-    uint16_t xpos, ypos;  //screen coordinates
+
+    Serial.print("Time:  ");
+    Serial.println(rtc.getTimeStr());
+    
+    Serial.print("Date: ");
+    Serial.println(rtc.getDateStr());
+
+//    if (Serial.available() > 0) {
+//      int inChar = Serial.read();
+//      if (isDigit(inChar)) {
+//        // convert the incoming byte to a char and add it to the string:
+//        inString += (char)inChar;
+//      }
+//      // if you get a newline, print the string, then the string's value:
+//      if (inChar == '\n') {
+//        Serial.print("Value:");
+//        Serial.println(inString.toInt());
+//        Serial.print("String: ");
+//        Serial.println(inString);
+//        // clear the string for new input:
+//      
+//        inString = "";
+//      }
+//      
+//    }
+
+//    tft.fillScreen(BLACK);
+    tft.setTextColor(WHITE,BLACK);
+    tft.setCursor(40,90);
+    tft.setRotation(3);
+    tft.setTextSize(5);
+    tft.println(rtc.getTimeStr());
+    
+    tft.setTextColor(WHITE,BLACK);
+    tft.setCursor(75,135);
+    tft.setRotation(3);
+    tft.setTextSize(3);
+    tft.println(rtc.getDateStr());
+    
+    delay(1000); 
+  
+}
+
+
+
+
+
+// touch point
+
+
+// For better pressure precision, we need to know the resistance
+// between X+ and X- Use any multimeter to read it
+// For the one we're using, its 300 ohms across the X plate
+//TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
+//TSPoint tp;
+
+//    uint16_t xpos, ypos;  //screen coordinates
 //    tp = ts.getPoint();   //tp.x, tp.y are ADC values
 
     // if sharing pins, you'll need to fix the directions of the touchscreen pins
@@ -99,4 +170,3 @@ void loop()
 //       Serial.print("\tY = "); Serial.print(tp.y);
 //       Serial.print("\tPressure = "); Serial.println(tp.z);
 //    }
-}
