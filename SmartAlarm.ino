@@ -11,6 +11,14 @@ MCUFRIEND_kbv tft;       // hard-wired for UNO shields anyway.
 //DS3231  rtc(SDA, SCL);
 DS3231  rtc(12, 13);
 
+// defines pins numbers for UltraSOnic
+const int trigPin = 10;
+const int echoPin = 11;
+// defines variables
+long duration;
+int distance = 0;
+int newDist;
+
 #if defined(__SAM3X8E__)
 #undef __FlashStringHelper::F(string_literal)
 #define F(string_literal) string_literal
@@ -74,7 +82,10 @@ void setup(void)
 //
     Serial.begin(9600);
 //    ts = TouchScreen(XP, YP, XM, YM, 300);     //call the constructor AGAIN with new values.
-
+    
+    // UltraSonic
+    pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
+    pinMode(echoPin, INPUT); // Sets the echoPin as an Input
 
     rtc.begin(); // Initialize the rtc object
     // The following lines can be uncommented to set the date and time
@@ -101,6 +112,51 @@ void loop()
     Serial.print("Date: ");
     Serial.println(rtc.getDateStr());
 
+    // Clears the trigPin
+    digitalWrite(trigPin, LOW);
+    delayMicroseconds(2);
+    // Sets the trigPin on HIGH state for 10 micro seconds
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
+    // Reads the echoPin, returns the sound wave travel time in microseconds
+    duration = pulseIn(echoPin, HIGH);
+    // Calculating the distance
+    newDist = duration * 0.034 / 2;
+    // Prints the distance on the Serial Monitor
+    if (newDist < 10){
+      Serial.print("Distance: ");
+      Serial.println(newDist);
+
+      if(newDist != distance){
+          tft.setTextColor(WHITE,BLACK);
+          tft.setCursor(0,90);
+          tft.setRotation(3);
+          tft.setTextSize(2);
+          tft.println(distance);
+          distance = newDist;
+        }
+    }
+    
+    tft.setTextColor(WHITE,BLACK);
+    tft.setCursor(40,90);
+    tft.setRotation(3);
+    tft.setTextSize(5);
+    tft.println(rtc.getTimeStr());
+    
+    tft.setTextColor(WHITE,BLACK);
+    tft.setCursor(75,135);
+    tft.setRotation(3);
+    tft.setTextSize(3);
+    tft.println(rtc.getDateStr());
+    
+    delay(1000); 
+  
+}
+
+
+// Serial input
+
 //    if (Serial.available() > 0) {
 //      int inChar = Serial.read();
 //      if (isDigit(inChar)) {
@@ -119,26 +175,6 @@ void loop()
 //      }
 //      
 //    }
-
-//    tft.fillScreen(BLACK);
-    tft.setTextColor(WHITE,BLACK);
-    tft.setCursor(40,90);
-    tft.setRotation(3);
-    tft.setTextSize(5);
-    tft.println(rtc.getTimeStr());
-    
-    tft.setTextColor(WHITE,BLACK);
-    tft.setCursor(75,135);
-    tft.setRotation(3);
-    tft.setTextSize(3);
-    tft.println(rtc.getDateStr());
-    
-    delay(1000); 
-  
-}
-
-
-
 
 
 // touch point
