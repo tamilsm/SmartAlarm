@@ -9,7 +9,7 @@ MCUFRIEND_kbv tft;       // hard-wired for UNO shields anyway.
 #include <DS3231.h>
 
 //DS3231  rtc(SDA, SCL);
-DS3231  rtc(12, 13);
+DS3231  rtc(12, SCL);
 
 // defines pins numbers for UltraSOnic
 const int trigPin = 10;
@@ -18,6 +18,10 @@ const int echoPin = 11;
 long duration;
 int distance = 0;
 int newDist;
+
+//Buzz Buzz
+const int buzzer = 13; //buzzer to arduino pin 9
+bool ring = false;
 
 #if defined(__SAM3X8E__)
 #undef __FlashStringHelper::F(string_literal)
@@ -82,6 +86,9 @@ void setup(void)
 //
     Serial.begin(9600);
 //    ts = TouchScreen(XP, YP, XM, YM, 300);     //call the constructor AGAIN with new values.
+
+    // Buzzz
+    pinMode(buzzer, OUTPUT); // Set buzzer - pin 9 as an output
     
     // UltraSonic
     pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
@@ -151,10 +158,16 @@ void loop()
     tft.println(rtc.getDateStr());
     
     delay(1000); 
-  
+    alarm();
 }
 
-
+void alarm(){
+  while(ring)
+    tone(buzzer, 1500); // Send 1KHz sound signal...
+    delay(150);        // ...for 1 sec
+    noTone(buzzer);     // Stop sound...
+    delay(200);        // ...for 1sec
+}
 // Serial input
 
 //    if (Serial.available() > 0) {
