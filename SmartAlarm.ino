@@ -23,6 +23,11 @@ DS3231  rtc(SDA, SCL);
 // Init a Time-data structure
 Time  t;
 
+const int hour = 10;
+const int mins = 05;
+char* alarmTime = "10:03:00";
+
+
 // defines pins numbers for UltraSonic
 const int trigPin = 6;
 const int echoPin = 7;
@@ -40,11 +45,13 @@ int x = 0;
 int y = 0;
 int z = 0;
 
-float sum = 0;
-int count = 0;
-int maxCount = 5;
-float avg = 0;
-float oldAvg = 100;
+const int numReadings = 3;
+
+int readings[numReadings];      // the readings from the analog input
+int readIndex = 0;              // the index of the current reading
+int total = 0;                  // the running total
+int average = 0;                // the average
+int oldAvg = 0;
 
 //Buzz Buzz
 const int buzzer = A0; //buzzer to arduino pin 9
@@ -75,12 +82,17 @@ void setup() {
   rtc.begin(); // Initialize the rtc object
   // The following lines can be uncommented to set the date and time
   rtc.setDOW(WEDNESDAY);     // Set Day-of-Week to SUNDAY
-  rtc.setTime(1, 0, 0);     // Set the time to 12:00:00 (24hr format)
+  rtc.setTime(hour, mins, 0);     // Set the time to 12:00:00 (24hr format)
   rtc.setDate(21, 10, 2019);   // Set the date
   
   tft.begin();
   tft.setRotation(3);
   tft.fillScreen(BLACK);
+
+  // initialize all the readings to 0:
+  for (int thisReading = 0; thisReading < numReadings; thisReading++) {
+    readings[thisReading] = 0;
+  }
 }
 
 void loop() {
@@ -124,41 +136,30 @@ void loop() {
   x = abs(analogRead(xpin));
   y = abs(analogRead(ypin));
   z = abs(analogRead(zpin));
-  
-//  Serial.print(x);
-//  // print a tab between values:
-//  Serial.print("\t");
-//  Serial.print(y);
-//  // print a tab between values:
-//  Serial.print("\t");
-//  Serial.print(z);
-//  Serial.println();
-  float mag = sqrt(x*x + y*y + z*z);
-//  Serial.println(mag);
 
-  if (count < maxCount){
-    sum = sum + mag;
-    count = count + 1;
+  float mag = sqrt(x*x + y*y + z*z);
+
+  // subtract the last reading:
+  total = total - readings[readIndex];
+  // read from the sensor:
+  readings[readIndex] = mag;
+  // add the reading to the total:
+  total = total + readings[readIndex];
+  // advance to the next position in the array:
+  readIndex = readIndex + 1;
+
+  // if we're at the end of the array...
+  if (readIndex >= numReadings) {
+    // ...wrap around to the beginning:
+    readIndex = 0;
   }
-  else{
-    count = 0;
-    avg = sum/maxCount;
-    sum = 0;
-    Serial.println(abs(avg-oldAvg));
-    oldAvg = avg;
-  }
+
+  // calculate the average:
+  average = total / numReadings;
+  // send it to the computer as ASCII digits
+  Serial.println(abs(oldAvg-average));
+  oldAvg = average;
   
-//  // print the sensor values:
-//  Serial.print(analogRead(xpin));
-//  // print a tab between values:
-//  Serial.print("\t");
-//  Serial.print(analogRead(ypin));
-//  // print a tab between values:
-//  Serial.print("\t");
-//  Serial.print(analogRead(zpin));
-//  Serial.println();
-  
-  char* alarmTime = "12:00:05";
   char* timie = rtc.getTimeStr();
   if (strcmp(timie,alarmTime)==0){
     //Serial.println("heree");
