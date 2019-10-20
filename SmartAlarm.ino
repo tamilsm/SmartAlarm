@@ -23,9 +23,11 @@ DS3231  rtc(SDA, SCL);
 // Init a Time-data structure
 Time  t;
 
-const int hour = 10;
-const int mins = 05;
-char* alarmTime = "10:03:00";
+const int hour = 6;
+const int mins = 25;
+char* alarmTime = "06:30:00";
+char* alarmStart = "06:26:00";
+char* alarmEnd = "06:27:00";
 
 
 // defines pins numbers for UltraSonic
@@ -50,12 +52,15 @@ const int numReadings = 3;
 int readings[numReadings];      // the readings from the analog input
 int readIndex = 0;              // the index of the current reading
 int total = 0;                  // the running total
-int average = 0;                // the average
-int oldAvg = 0;
+float average = 0;                // the average
+float oldAvg = 0;
+bool ring = false;
+bool off = false;
+bool first = true;
+bool alarm = false;
 
 //Buzz Buzz
 const int buzzer = A0; //buzzer to arduino pin 9
-bool ring = false;
 
 
 // Assign human-readable names to some common 16-bit color values:
@@ -158,19 +163,38 @@ void loop() {
   average = total / numReadings;
   // send it to the computer as ASCII digits
   Serial.println(abs(oldAvg-average));
-  oldAvg = average;
   
   char* timie = rtc.getTimeStr();
-  if (strcmp(timie,alarmTime)==0){
-    //Serial.println("heree");
+//  Serial.print(timie);
+//  Serial.print("\t");
+//  Serial.print(alarmStart);
+//  Serial.print("\t");
+//  Serial.println(alarmEnd);
+//  Serial.println(strcmp(timie,alarmStart));
+  
+  if ((strcmp(timie,alarmStart) > -1) && (strcmp(timie,alarmEnd) < 0)){
+    Serial.println("made it");
+    if (abs(oldAvg-average) > 3){
+      off = true;
+      alarm = true;
+    }
+  }
+  if (strcmp(timie,alarmEnd) == 0){
+      off = true;
+      alarm = true;
+  }
+  oldAvg = average + 1;
+  if (alarm && first){
+    alarm = false;
     ring = true;
     tft.setTextColor(BLUE,BLACK);
     tft.setCursor(13,18);
     tft.setRotation(3);
     tft.setTextSize(3);
     tft.println("SNOOZE");
+    first = false;
   }
-  if (newDist < 3){
+  if (newDist < 5){
     ring = false;
     tft.setTextColor(BLACK,BLACK);
     tft.setCursor(13,18);
